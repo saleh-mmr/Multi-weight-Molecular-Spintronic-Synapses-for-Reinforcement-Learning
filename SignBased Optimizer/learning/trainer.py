@@ -44,10 +44,11 @@ class Trainer:
 
 
     def train(self):
-        self.warmup_replay_memory(20000)
+        # self.warmup_replay_memory(20000)
         total_steps = 0
         total_reward = []
         loss_track = []
+        epsilon_track = []
         best_so_far = -float("inf")
         window_size = 5
         recent_avg = -float("inf")
@@ -55,12 +56,12 @@ class Trainer:
         for episode in range(1, self.max_episodes + 1):
             # Initial observation from environment
             state = self.env.reset()
-            # Flags to track episode completion for each environment
+            # Flag to indicate if the episode is done
             done = False
             # Total reward accumulated in this episode each environment (for logging)
             episode_reward = 0
             step_counter = 0 # Step counter inside episode
-            while step_counter < self.max_steps:
+            while not done:
                 # For each environment, if it's not done, select action, step, store experience, and accumulate reward
                 action = self.agent.select_action(state)
                 # Step in the environment and get next state, reward, and done flag
@@ -75,6 +76,7 @@ class Trainer:
                 if len(self.agent.replay_memory) >= self.batch_size:
                     loss = self.agent.learn(self.batch_size)
                     loss_track.append(loss)
+                    epsilon_track.append(self.agent.epsilon)
 
             total_steps += step_counter
             total_reward.append(episode_reward)
@@ -102,7 +104,7 @@ class Trainer:
 
 
 
-        return total_reward, loss_track
+        return total_reward, loss_track, epsilon_track
 
     def test(self, model_path, num_tests=100):
 
