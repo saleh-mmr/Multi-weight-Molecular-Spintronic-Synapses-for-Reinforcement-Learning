@@ -2,8 +2,10 @@ import torch
 
 
 class ManhattanController:
-    def __init__(self, model):
+    def __init__(self, model, eta=0.001):
         self.model = model
+        # Fixed Synaptic weight-update increment
+        self.eta = eta
 
         self.state = {}
         for name, param in model.named_parameters():
@@ -28,7 +30,7 @@ class ManhattanController:
 
     def _conductance(self, idx):
         idx_f = idx.to(dtype=torch.float32)
-        value = idx_f * 0.001
+        value = idx_f * self.eta
         return value
 
     @torch.no_grad()

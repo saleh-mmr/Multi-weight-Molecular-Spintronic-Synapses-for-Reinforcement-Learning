@@ -50,7 +50,7 @@ class DQNAgent:
         self.criterion = nn.MSELoss()
 
         if optimizer_selector == 1:
-            self.weight_controller = ManhattanController(self.q_network)
+            self.weight_controller = LinearManhattanController(self.q_network, learning_rate=0.001)
         elif optimizer_selector == 2:
             self.weight_controller = LogarithmicManhattanController(self.q_network)
         elif optimizer_selector == 3:
