@@ -16,6 +16,7 @@ class Trainer:
         # Load parameters
         self.discount_factor = hyperparams["discount_factor"]           # Bellman γ (future reward weight)
         self.batch_size = hyperparams["batch_size"]                     # Number of experiences per learning step
+        self.network_size = hyperparams["network_size"]                 # Number of neurons in hidden layers
         self.max_episodes = hyperparams["max_episodes"]                 # number of episode for training or testing
         self.max_steps = hyperparams["max_steps"]                       # Episode timeout
         self.epsilon_max = hyperparams["epsilon_max"]                   # Initial exploration rate
@@ -24,7 +25,7 @@ class Trainer:
         self.memory_capacity = hyperparams["memory_capacity"]           # Replay buffer size
         self.seed = seed
         if hyperparams["problem"] == 1:
-            self.env = CartPoleEnv(render_mode=None, seed=seed)
+            self.env = CartPoleEnv(render_mode=None, seed=seed, max_steps=self.max_steps)
             self.problem = 1
         else:
             self.env = MountainCarEnv(render_mode=None, seed=seed)
@@ -32,6 +33,7 @@ class Trainer:
 
         self.agent = DQNAgent(
             env=self.env,
+            network_size=self.network_size,
             epsilon_max=self.epsilon_max,
             epsilon_min=self.epsilon_min,
             epsilon_decay=self.epsilon_decay,
@@ -58,7 +60,7 @@ class Trainer:
             # Total reward accumulated in this episode each environment (for logging)
             episode_reward = 0
             step_counter = 0 # Step counter inside episode
-            while not done and step_counter < self.max_steps:
+            while step_counter < self.max_steps:
                 # For each environment, if it's not done, select action, step, store experience, and accumulate reward
                 action = self.agent.select_action(state)
                 # Step in the environment and get next state, reward, and done flag

@@ -16,6 +16,7 @@ class DQNAgent:
     def __init__(
         self,
         env,                                                      # Gym environment
+        network_size,                                             # Number of neurons in hidden layers
         epsilon_max,                                              # Start with more exploration
         epsilon_min,                                              # Minimum exploration threshold
         epsilon_decay,                                            # How fast exploration decreases
@@ -43,7 +44,7 @@ class DQNAgent:
         # Q-Network
         input_dim = self.env.observation_space.shape[0]                       # network input = state size (4)
         output_dim = self.env.action_space.n                                  # network output = number of actions (2)
-        self.q_network = DQNNetwork(output_dim, input_dim).to(config.device)
+        self.q_network = DQNNetwork(output_dim, input_dim, network_size).to(config.device)
 
         # use a squared-error loss just to get gradients,
         self.criterion = nn.MSELoss()

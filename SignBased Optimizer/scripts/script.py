@@ -22,8 +22,9 @@ problem = {
 
 hyperparams = {
     "discount_factor": 0.99,
+    "network_size": 50,
     "batch_size": 100,
-    "max_episodes": 3000,
+    "max_episodes": 1700,
     "max_steps": 100,
     "epsilon_max": 1.0,
     "epsilon_min": 0.01,

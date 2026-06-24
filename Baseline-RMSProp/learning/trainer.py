@@ -5,7 +5,8 @@ import numpy as np
 import torch
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from agents.agent import DQNAgent
-from envs.mycartpole import MyCartPoleEnv as CartPoleEnv
+from envs.mycartpole import MyCartPoleEnv
+from envs.cartpole import CartPoleEnv
 
 
 class Trainer:
@@ -23,7 +24,12 @@ class Trainer:
         self.goal = hyperparams["goal"]
         self.network_size = hyperparams["network_size"]
         self.seed = seed
-        self.env = CartPoleEnv(render_mode=None, seed=seed, max_steps=self.goal, pole_length=0.5, pole_mass=0.1)
+
+        # select the environment with the specified pole length and mass
+        # self.env = MyCartPoleEnv(render_mode=None, seed=seed, max_steps=self.goal, pole_length=0.5, pole_mass=0.1)
+
+        # select the original CartPole environment with the default pole length and mass
+        self.env = CartPoleEnv(render_mode=None, seed=seed, max_steps=self.goal)
 
         self.agent = DQNAgent(
             env=self.env,
