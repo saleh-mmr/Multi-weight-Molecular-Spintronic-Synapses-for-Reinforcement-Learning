@@ -7,6 +7,30 @@ import numpy as np
 import torch
 from learning.trainer import Trainer
 
+def plot_per_episode(values, label, color, ylabel, title):
+    """Plot a single training metric with the same visual configuration."""
+    plt.figure(figsize=(10, 6))
+    plt.plot(values, label=label, color=color, linewidth=4, alpha=0.9)
+    plt.xlabel("Episode", fontsize=16)
+    plt.ylabel(ylabel, fontsize=16)
+    plt.title(title, fontsize=16)
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+
+def plot_per_step(values, label, color, ylabel, title):
+    """Plot a single training metric with the same visual configuration."""
+    plt.figure(figsize=(10, 6))
+    plt.plot(values, label=label, color=color, linewidth=4, alpha=0.9)
+    plt.xlabel("Step", fontsize=16)
+    plt.ylabel(ylabel, fontsize=16)
+    plt.title(title, fontsize=16)
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+
 
 controller = {
     1: "manhattan_linear",
@@ -24,7 +48,7 @@ hyperparams = {
     "discount_factor": 0.99,
     "network_size": 50,
     "batch_size": 100,
-    "max_episodes": 1700,
+    "max_episodes": 950,
     "max_steps": 100,
     "epsilon_max": 1.0,
     "epsilon_min": 0.01,
@@ -40,33 +64,19 @@ train_mode = True
 if __name__ == "__main__":
 
     if train_mode:
-        seeds = [49]
-        rewards_list = {}
-        loss_list = {}
-        for seed in seeds:
-            print(f"Training with seed: {seed}")
-            random.seed(seed)
-            np.random.seed(seed)
-            torch.manual_seed(seed)
-            trainer = Trainer(hyperparams, seed)
-            rewards, loss = trainer.train()
-            rewards_list[seed] = rewards
-            loss_list[seed] = loss
-        reward_runs = list(rewards_list.values())
-        mean_rewards = np.mean(reward_runs, axis=0)
-        std_rewards = np.std(reward_runs, axis=0)
+        # Keep one explicit seed for reproducibility of this run.
+        seed = 49
+        print(f"Training with seed: {seed}")
+        random.seed(seed)
+        np.random.seed(seed)
+        torch.manual_seed(seed)
+        trainer = Trainer(hyperparams, seed)
+        rewards, loss, epsilon = trainer.train()
 
-        # Plot results
-        plt.figure(figsize=(10,6))
-        for seed, rewards in rewards_list.items():
-            plt.plot(rewards, label=f"Seed {seed}", alpha=0.7)
-        plt.plot(mean_rewards, label="Mean Reward", linewidth=3)
-        plt.xlabel("Episode")
-        plt.ylabel("Reward")
-        plt.title(f"DQN Training on {problem[hyperparams["problem"]]} with {controller[hyperparams["controller"]]} Controller")
-        plt.legend()
-        plt.grid(True)
-        plt.show()
+        # Plot all training metrics with the same configuration.
+        plot_per_episode(rewards, "reward", "blue", "Reward", "Training Cartpole with SignBased Optimizer - Reward")
+        plot_per_step(loss, "loss", "orange", "Loss", "Training Cartpole with SignBased Optimizer - Loss")
+        plot_per_step(epsilon, "epsilon", "green", "Epsilon", "Training Cartpole with SignBased Optimizer - Epsilon")
 
     else:
         trainer = Trainer(hyperparams, seed=None)
