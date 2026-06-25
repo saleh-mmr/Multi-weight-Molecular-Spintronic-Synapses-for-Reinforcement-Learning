@@ -1,7 +1,7 @@
 import itertools
 import os
 import sys
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
 from matplotlib import pyplot as plt
 import random
@@ -49,7 +49,7 @@ if __name__ == "__main__":
     seed = 873
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
-    root_folder = Path("../weights/grid_search") / f"grid_{timestamp}"
+    root_folder = Path("../../weights/grid_search") / f"grid_{timestamp}"
     root_folder.mkdir(parents=True, exist_ok=True)
     for network_size, g_ap, g_p, g_bias, regularization_C in itertools.product(network_size, g_ap, g_p, g_bias, regularization_C):
         hyperparams = base_hyperparams.copy()
