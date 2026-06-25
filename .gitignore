@@ -67,6 +67,8 @@ htmlcov/
 *.log
 *.log.*
 *.pth
+*.csv
+*.png
 
 # Temporary files
 .tmp/

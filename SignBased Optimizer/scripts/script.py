@@ -7,25 +7,23 @@ import numpy as np
 import torch
 from learning.trainer import Trainer
 
-def plot_per_episode(values, label, color, ylabel, title):
+def plot_per_episode(values, label, color, ylabel):
     """Plot a single training metric with the same visual configuration."""
     plt.figure(figsize=(10, 6))
     plt.plot(values, label=label, color=color, linewidth=4, alpha=0.9)
     plt.xlabel("Episode", fontsize=16)
     plt.ylabel(ylabel, fontsize=16)
-    plt.title(title, fontsize=16)
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
     plt.show()
 
-def plot_per_step(values, label, color, ylabel, title):
+def plot_per_step(values, label, color, ylabel):
     """Plot a single training metric with the same visual configuration."""
     plt.figure(figsize=(10, 6))
     plt.plot(values, label=label, color=color, linewidth=4, alpha=0.9)
     plt.xlabel("Step", fontsize=16)
     plt.ylabel(ylabel, fontsize=16)
-    plt.title(title, fontsize=16)
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
@@ -48,14 +46,14 @@ hyperparams = {
     "discount_factor": 0.99,
     "network_size": 50,
     "batch_size": 100,
-    "max_episodes": 950,
+    "max_episodes": 350,
     "max_steps": 100,
     "epsilon_max": 1.0,
     "epsilon_min": 0.01,
     "epsilon_decay": 0.0004,
     "memory_capacity": 100000,
     "problem": 1,
-    "controller": 1,
+    "controller": 2,
 }
 
 train_mode = True
@@ -74,9 +72,9 @@ if __name__ == "__main__":
         rewards, loss, epsilon = trainer.train()
 
         # Plot all training metrics with the same configuration.
-        plot_per_episode(rewards, "reward", "blue", "Reward", "Training Cartpole with SignBased Optimizer - Reward")
-        plot_per_step(loss, "loss", "orange", "Loss", "Training Cartpole with SignBased Optimizer - Loss")
-        plot_per_step(epsilon, "epsilon", "green", "Epsilon", "Training Cartpole with SignBased Optimizer - Epsilon")
+        plot_per_episode(rewards, "reward", "blue", "Reward")
+        plot_per_step(loss, "loss", "orange", "Loss")
+        plot_per_step(epsilon, "epsilon", "green", "Epsilon")
 
     else:
         trainer = Trainer(hyperparams, seed=None)
