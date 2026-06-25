@@ -125,13 +125,13 @@ class DQNAgent:
         targets = torch.clamp(targets, min=-100, max=100)   # Clip targets to prevent exploding gradients
 
         # compare current guess vs target (criterion is MSELoss)
-        base_loss = self.criterion(predicted_q, targets)
+        loss = self.criterion(predicted_q, targets)
 
-        weight_sum = torch.tensor(0.0, device=config.device)
-        for param in self.q_network.parameters():
-            weight_sum = weight_sum + param.sum()
+        # weight_sum = torch.tensor(0.0, device=config.device)
+        # for param in self.q_network.parameters():
+        #     weight_sum = weight_sum + param.sum()
 
-        loss = base_loss + self.regularization_C * weight_sum
+        # loss = base_loss + self.regularization_C * weight_sum
         # print(f"Ap index: {ap_index}, Base Loss: {base_loss.item():.4f}, Regularization Term: {(regularization_C * weight_sum).item():.4f}, Total Loss: {loss.item():.4f}")
         # loss = self.criterion(predicted_q, targets) + C * (Sum of values of weights)
         #                                             + C * (Sum of absolute values)
