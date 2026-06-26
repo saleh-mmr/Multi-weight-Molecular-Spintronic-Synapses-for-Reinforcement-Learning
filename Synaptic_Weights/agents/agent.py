@@ -122,7 +122,7 @@ class DQNAgent:
             next_q = self.q_network(next_states).max(dim=1, keepdim=True).values   # Choose max Q-value for each next state
             next_q[dones] = 0.0
         targets = rewards + self.discount * next_q
-        targets = torch.clamp(targets, min=-100, max=100)   # Clip targets to prevent exploding gradients
+        targets = torch.clamp(targets, min=0, max=200)   # Clip targets to prevent exploding gradients
 
         # compare current guess vs target (criterion is MSELoss)
         loss = self.criterion(predicted_q, targets)
