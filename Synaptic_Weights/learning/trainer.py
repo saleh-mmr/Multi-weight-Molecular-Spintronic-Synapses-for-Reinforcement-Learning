@@ -5,11 +5,9 @@ project_root = current_file.parents[1]
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 import random
-import numpy as np
 import torch
 from agents.agent import DQNAgent
 from envs.cartpole import CartPoleEnv
-from envs.mycartpole import MyCartPoleEnv
 import pandas as pd
 
 
@@ -40,9 +38,9 @@ class Trainer:
         self.regularization_C = hyperparams["regularization_C"]          # L2 regularization coefficient for weight updates (to prevent overfitting)
         self.seed = seed
         self.folder = folder
-        self.first_modified_cartpole_env = MyCartPoleEnv(render_mode=None, seed=seed, max_steps=self.max_steps_per_episode, pole_length=self.CP_pole_length_1, pole_mass=self.CP_pole_mass_1)
-        self.second_modified_cartpole_env = MyCartPoleEnv(render_mode=None, seed=seed, max_steps=self.max_steps_per_episode, pole_length=self.CP_pole_length_2, pole_mass=self.CP_pole_mass_2)
-        self.third_modified_cartpole_env = MyCartPoleEnv(render_mode=None, seed=seed, max_steps=self.max_steps_per_episode, pole_length=self.CP_pole_length_3, pole_mass=self.CP_pole_mass_3)
+        self.first_modified_cartpole_env = CartPoleEnv(render_mode=None, seed=seed, max_steps=self.max_steps_per_episode, pole_length=self.CP_pole_length_1, pole_mass=self.CP_pole_mass_1)
+        self.second_modified_cartpole_env = CartPoleEnv(render_mode=None, seed=seed, max_steps=self.max_steps_per_episode, pole_length=self.CP_pole_length_2, pole_mass=self.CP_pole_mass_2)
+        self.third_modified_cartpole_env = CartPoleEnv(render_mode=None, seed=seed, max_steps=self.max_steps_per_episode, pole_length=self.CP_pole_length_3, pole_mass=self.CP_pole_mass_3)
 
 
 

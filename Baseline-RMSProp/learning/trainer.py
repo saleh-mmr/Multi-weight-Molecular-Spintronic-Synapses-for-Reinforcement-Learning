@@ -5,7 +5,6 @@ import numpy as np
 import torch
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from agents.agent import DQNAgent
-from envs.mycartpole import MyCartPoleEnv
 from envs.cartpole import CartPoleEnv
 
 
