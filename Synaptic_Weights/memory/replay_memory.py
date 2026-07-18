@@ -1,3 +1,5 @@
+"""Replay buffer implementation for each modified CartPole task memory stream."""
+
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))

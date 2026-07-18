@@ -1,3 +1,5 @@
+"""Runtime device and CUDA debugging configuration for synaptic-weight experiments."""
+
 import os
 import gc
 import sys

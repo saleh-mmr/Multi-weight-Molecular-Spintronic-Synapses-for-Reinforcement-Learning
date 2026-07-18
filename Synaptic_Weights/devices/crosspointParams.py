@@ -1,3 +1,5 @@
+"""Parameter container for physical conductance equations in crosspoint devices."""
+
 class CrossPointParams:
     def __init__(self, g_ap_coefficient, g_p_coefficient, shift_parameter, g_bias_coefficient, noise_stddev, ):
         self.g_ap_coefficient = g_ap_coefficient

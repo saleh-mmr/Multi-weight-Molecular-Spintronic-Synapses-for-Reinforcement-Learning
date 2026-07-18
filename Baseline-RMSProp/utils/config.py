@@ -1,3 +1,5 @@
+"""Shared device and CUDA-debug configuration for the baseline project."""
+
 import os
 import gc
 import sys

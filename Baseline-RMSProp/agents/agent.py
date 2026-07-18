@@ -1,3 +1,5 @@
+"""DQN agent implementation for the RMSProp CartPole baseline experiment."""
+
 import os
 import numpy as np
 import sys

@@ -1,3 +1,5 @@
+"""Calculates entropy and directional autocorrelation across all three model variants."""
+
 from pathlib import Path
 
 import numpy as np

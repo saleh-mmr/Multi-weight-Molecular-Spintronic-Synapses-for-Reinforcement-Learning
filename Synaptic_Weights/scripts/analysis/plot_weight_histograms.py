@@ -1,3 +1,5 @@
+"""Builds side-by-side histograms for a selected layer across MC1/MC2/MC3 checkpoints."""
+
 from pathlib import Path
 
 import pandas as pd

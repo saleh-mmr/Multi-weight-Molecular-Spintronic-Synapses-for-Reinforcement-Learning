@@ -1,3 +1,5 @@
+"""Magnetoresistive positive crosspoint model with P/AP conductance branches."""
+
 import numpy as np
 
 from .baseCrosspoint import BaseCrosspoint

@@ -1,3 +1,5 @@
+"""Mutable per-crosspoint state storing index and one sampled noise realization."""
+
 import numpy as np
 
 class CrosspointState:

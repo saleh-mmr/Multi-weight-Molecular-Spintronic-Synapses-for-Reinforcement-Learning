@@ -1,8 +1,10 @@
+"""Linear conductance-based Manhattan controller for sign-driven updates."""
+
 import torch
 
 
 class ManhattanController:
-    def __init__(self, model, eta=0.001):
+    def __init__(self, model, eta):
         self.model = model
         # Fixed Synaptic weight-update increment
         self.eta = eta

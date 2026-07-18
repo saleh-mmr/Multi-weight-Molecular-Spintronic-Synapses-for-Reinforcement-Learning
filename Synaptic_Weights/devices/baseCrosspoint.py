@@ -1,3 +1,5 @@
+"""Base crosspoint primitive with shared state and stochastic noise update logic."""
+
 from .crosspointParams import CrossPointParams
 from .crosspointState import CrosspointState
 import numpy as np

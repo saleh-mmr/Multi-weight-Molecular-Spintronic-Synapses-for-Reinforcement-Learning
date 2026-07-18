@@ -1,3 +1,5 @@
+"""Main script to train or test the sign-based optimizer CartPole agent."""
+
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -44,16 +46,16 @@ problem = {
 
 hyperparams = {
     "discount_factor": 0.99,
-    "network_size": 50,
+    "network_size": 20,
     "batch_size": 100,
-    "max_episodes": 350,
+    "max_episodes": 2000,
     "max_steps": 100,
     "epsilon_max": 1.0,
     "epsilon_min": 0.01,
-    "epsilon_decay": 0.0004,
+    "epsilon_decay": 0.0002,
     "memory_capacity": 100000,
     "problem": 1,
-    "controller": 2,
+    "controller": 1,
 }
 
 train_mode = True

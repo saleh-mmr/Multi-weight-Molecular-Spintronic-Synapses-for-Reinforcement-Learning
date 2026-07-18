@@ -1,3 +1,5 @@
+"""Plots weight and bias histogram distributions from a baseline checkpoint."""
+
 from pathlib import Path
 
 import matplotlib.pyplot as plt

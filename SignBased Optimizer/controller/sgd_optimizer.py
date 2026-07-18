@@ -1,3 +1,5 @@
+"""Minimal gradient-descent controller used as a custom update baseline."""
+
 import torch
 
 

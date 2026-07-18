@@ -1,3 +1,5 @@
+"""Neural Q-network used by synaptic multi-weight reinforcement learning runs."""
+
 from torch import nn
 
 class DQNNetwork(nn.Module):

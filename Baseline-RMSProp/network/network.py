@@ -1,3 +1,5 @@
+"""Feed-forward Q-network architecture for the RMSProp CartPole baseline."""
+
 from torch import nn
 import os
 import sys

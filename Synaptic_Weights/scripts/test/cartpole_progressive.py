@@ -1,3 +1,5 @@
+"""Progressive multi-stage checkpoint filtering across the three cartpole tasks."""
+
 import sys
 from pathlib import Path
 import pandas as pd

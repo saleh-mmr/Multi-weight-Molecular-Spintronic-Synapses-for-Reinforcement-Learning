@@ -1,3 +1,5 @@
+"""Computes entropy and autocorrelation diagnostics for one baseline layer."""
+
 from pathlib import Path
 
 import numpy as np

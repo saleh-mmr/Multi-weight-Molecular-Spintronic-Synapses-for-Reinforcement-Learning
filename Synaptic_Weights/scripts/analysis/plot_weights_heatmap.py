@@ -1,3 +1,5 @@
+"""Plots per-model and pairwise-difference heatmaps for selected weight/bias tensors."""
+
 from pathlib import Path
 
 import numpy as np

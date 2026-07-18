@@ -1,4 +1,7 @@
+"""Computes 1D/2D autocorrelation summaries and correlation lengths for checkpoint tensors."""
+
 from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import torch

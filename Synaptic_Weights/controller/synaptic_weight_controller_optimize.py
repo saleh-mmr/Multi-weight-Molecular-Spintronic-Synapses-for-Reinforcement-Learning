@@ -1,3 +1,5 @@
+"""Vectorized synaptic controller for efficient multi-weight conductance simulation."""
+
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -21,20 +23,17 @@ class SynapticWeightController:
         self.scaling_factor = 1.0
 
         # Tensor-based synapse states
-        #
         # For each model parameter named `name`, we store:
-        #
         # self.bias_x[name]:
         #     bias crosspoint index, same shape as parameter
-        #
         # self.bias_noise[name]:
         #     bias crosspoint noise, same shape as parameter
-        #
         # self.positive_x[name]:
         #     positive crosspoint index, shape = (n_problem, *parameter.shape)
-        #
         # self.positive_noise[name]:
         #     positive crosspoint noise, shape = (n_problem, *parameter.shape)
+
+
         self.bias_x = {}
         self.bias_noise = {}
         self.positive_x = {}
@@ -77,33 +76,23 @@ class SynapticWeightController:
             )
 
         # Helps avoid unnecessary reloading later.
-        # We keep it simple for now.
         self.current_loaded_ap_index = None
         self.weights_dirty = True
 
     def _initial_index(self, device, dtype):
         """
-        Same logic as CrosspointState.__init__:
-
-            k = g_ap / g_p
-            i = 1
-            while i**k <= i + shift_parameter:
-                i += 1
-
-        Returns the initial index as a float tensor value.
+        This function is implemented because we add 'shift_parameter' to G_p, so we need to find
+        the initial index where G_ap>G_p. Returns the initial index as a float tensor value.
         """
         k = self.g_ap / self.g_p
         i = 1
-
         while i ** k <= i + self.shift_parameter:
             i += 1
-
         return float(i)
 
     def _draw_noise(self, shape, device, dtype):
         """
         Same behavior as np.random.normal(0.0, noise_stddev), but vectorized.
-
         If noise_stddev <= 0, return zero noise.
         """
         if self.noise_stddev > 0:
@@ -189,7 +178,7 @@ class SynapticWeightController:
             #     )
 
             # Positive gradient:
-            # old code called increase_bias_crosspoint_index()
+            # object-level code called increase_bias_crosspoint_index()
             if pos.any():
                 self.bias_x[name][pos] += 1.0
                 self.bias_noise[name][pos] = self._draw_noise(
@@ -199,7 +188,7 @@ class SynapticWeightController:
                 )
 
             # Negative gradient:
-            # old code called increase_positive_crosspoint_index(ap_index)
+            # object-level code called increase_positive_crosspoint_index(ap_index)
             if neg.any():
                 self.positive_x[name][ap_index][neg] += 1.0
                 self.positive_noise[name][ap_index][neg] = self._draw_noise(
