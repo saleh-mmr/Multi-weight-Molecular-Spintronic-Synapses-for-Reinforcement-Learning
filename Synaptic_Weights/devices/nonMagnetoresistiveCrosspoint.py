@@ -1,3 +1,5 @@
+"""Bias crosspoint model that uses the non-magnetoresistive conductance branch."""
+
 import numpy as np
 
 from .baseCrosspoint import BaseCrosspoint

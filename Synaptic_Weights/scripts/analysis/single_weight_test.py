@@ -1,3 +1,5 @@
+"""Executes targeted evaluation for one checkpoint and saves reward logs to CSV."""
+
 import sys
 from pathlib import Path
 

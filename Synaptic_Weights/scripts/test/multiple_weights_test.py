@@ -1,3 +1,5 @@
+"""Sweeps all checkpoints for one weight family and reports evaluation statistics."""
+
 import sys
 from pathlib import Path
 import pandas as pd

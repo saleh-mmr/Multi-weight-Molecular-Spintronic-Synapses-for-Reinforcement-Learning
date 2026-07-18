@@ -1,3 +1,5 @@
+"""Compares full weight layers across multiple baseline checkpoints."""
+
 from pathlib import Path
 
 import numpy as np

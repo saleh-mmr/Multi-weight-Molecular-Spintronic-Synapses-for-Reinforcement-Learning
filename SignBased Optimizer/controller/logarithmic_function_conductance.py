@@ -1,3 +1,5 @@
+"""Logarithmic conductance-based Manhattan controller for synaptic updates."""
+
 import numpy as np
 import torch
 

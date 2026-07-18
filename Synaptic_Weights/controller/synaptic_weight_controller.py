@@ -1,3 +1,5 @@
+"""Object-based synaptic controller mapping gradients to crosspoint state updates."""
+
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -34,7 +36,6 @@ class SynapticWeightController:
 
     @torch.no_grad()
     def step(self, ap_index):
-        # print("------------------Updating synaptic weights based on gradients for AP index: ", ap_index, "------------------")
         for name, param in self.model.named_parameters():
             if not param.requires_grad:
                 continue
@@ -47,7 +48,9 @@ class SynapticWeightController:
             pos = (grad > 0) & valid
             neg = (grad < 0) & valid
 
-
+            # ********************************************************
+            # Debugging prints for the first weight of the first layer
+            # ********************************************************
             # if name == "FC.0.weight":
             #     print("BEFORE update for FC.0.weight neuron:")
             #     print(f"Gradient: {grad[0, 0].item():.4f}")
@@ -81,6 +84,10 @@ class SynapticWeightController:
                         if neg[i]:
                             self.synapses[name][i].increase_positive_crosspoint_index(ap_index)
 
+
+            # ********************************************************
+            # Debugging prints for the first weight of the first layer
+            # ********************************************************
             # if name == "FC.0.weight":
             #     print("After update for FC.0.weight neuron:")
             #     print(f"Ap Positive Crosspoint {ap_index} index: {self.synapses[name][0][0].get_positive_crosspoint_state(ap_index)}")
@@ -110,6 +117,10 @@ class SynapticWeightController:
                 for i in range(param.shape[0]):
                     param[i].copy_(torch.tensor(st[i].weight(ap_index), dtype=param.dtype))
 
+
+            # ********************************************************
+            # Debugging prints for the first weight of the first layer
+            # ********************************************************
             # if name == "FC.0.weight":
             #     print(f"In Controller Loaded Weights for ap_index: {ap_index} is {param[0, 0].item():.4f} ")
             #     print(f"Ap Positive Crosspoint {ap_index} index: {self.synapses[name][0][0].get_positive_crosspoint_state(ap_index)}")

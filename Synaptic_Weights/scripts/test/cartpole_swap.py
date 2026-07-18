@@ -1,3 +1,5 @@
+"""Evaluates swap-specificity by testing all cartpole/weight pair combinations."""
+
 import sys
 from pathlib import Path
 import pandas as pd

@@ -1,3 +1,5 @@
+"""Three-task training pipeline coordinating shared synaptic-weight DQN learning."""
+
 import sys
 from pathlib import Path
 current_file = Path(__file__).resolve()

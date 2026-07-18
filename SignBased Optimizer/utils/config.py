@@ -1,3 +1,5 @@
+"""Global runtime/device configuration for sign-based optimizer experiments."""
+
 import os
 import gc
 import sys

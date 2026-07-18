@@ -1,3 +1,5 @@
+"""Training and evaluation orchestration for sign-based optimizer experiments."""
+
 import os
 import random
 import sys
@@ -8,8 +10,6 @@ import torch
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from agents.agent import DQNAgent
 from envs.cartpole import CartPoleEnv
-from envs.mountaincar import MountainCarEnv
-
 
 class Trainer:
     def __init__(self, hyperparams, seed):
@@ -27,9 +27,7 @@ class Trainer:
         if hyperparams["problem"] == 1:
             self.env = CartPoleEnv(render_mode=None, seed=seed, max_steps=self.max_steps)
             self.problem = 1
-        else:
-            self.env = MountainCarEnv(render_mode=None, seed=seed)
-            self.problem = 2
+
 
         self.agent = DQNAgent(
             env=self.env,
@@ -151,4 +149,3 @@ class Trainer:
             next_state, reward, done = self.env.step(action)
             self.agent.replay_memory.store(state, action, next_state, reward, done)
             state = self.env.reset() if done else next_state
-

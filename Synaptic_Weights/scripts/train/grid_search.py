@@ -1,3 +1,5 @@
+"""Hyperparameter grid-search launcher for long-running synaptic training sweeps."""
+
 import itertools
 import os
 import sys

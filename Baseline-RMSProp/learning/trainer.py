@@ -1,3 +1,5 @@
+"""Training and evaluation loops for the RMSProp single-environment baseline."""
+
 import os
 import random
 import sys

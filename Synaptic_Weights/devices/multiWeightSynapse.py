@@ -1,3 +1,5 @@
+"""Composes multiple physical crosspoints into one reusable multi-weight synapse."""
+
 from .crosspointState import CrosspointState
 from .magnetoresistiveCrosspoint import MagnetoresistiveCrosspoint
 from .nonMagnetoresistiveCrosspoint import NonMagnetoresistiveCrosspoint

@@ -1,3 +1,5 @@
+"""Full layer-by-layer tensor statistics, spectral analysis, and plotting pipeline."""
+
 from pathlib import Path
 
 import numpy as np

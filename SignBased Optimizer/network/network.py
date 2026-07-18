@@ -1,3 +1,5 @@
+"""Q-network architecture for sign-based optimizer CartPole experiments."""
+
 from torch import nn
 import os
 import sys

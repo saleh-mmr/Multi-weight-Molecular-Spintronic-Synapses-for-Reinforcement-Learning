@@ -1,3 +1,5 @@
+"""Multi-environment DQN agent driven by physical multi-weight synaptic updates."""
+
 import os
 import numpy as np
 import sys
@@ -70,7 +72,6 @@ class DQNAgent:
 
     # Action Selection (epsilon-greedy)
     def select_action(self, state, ap_index, epsilon=None):
-
         if epsilon is None:
             epsilon = self.epsilon
 
@@ -81,17 +82,13 @@ class DQNAgent:
         # exploration
         state = torch.as_tensor(state, dtype=torch.float32, device=config.device).unsqueeze(0)
         with torch.no_grad():
-            # weight_matrix = self.q_network.state_dict()["FC.0.weight"]
-            # print(weight_matrix[0, 0].item())
-            self.weight_controller.load_weights(ap_index)
+            self.weight_controller.load_weights(ap_index) # Load current weights from the controller before action selection
             q_values = self.q_network(state)
-            # print(f"Q-values for AP index {ap_index}: {q_values.cpu().numpy()}")
         return torch.argmax(q_values, dim=1).item()        # exploration
 
 
 
     def select_action_test(self, state):
-        # exploration
         state = torch.as_tensor(state, dtype=torch.float32, device=config.device).unsqueeze(0)
         with torch.no_grad():
             q_values = self.q_network(state)
@@ -122,20 +119,10 @@ class DQNAgent:
             next_q = self.q_network(next_states).max(dim=1, keepdim=True).values   # Choose max Q-value for each next state
             next_q[dones] = 0.0
         targets = rewards + self.discount * next_q
-        targets = torch.clamp(targets, min=0, max=200)   # Clip targets to prevent exploding gradients
+        targets = torch.clamp(targets, min=-100, max=100)   # Clip targets to prevent exploding gradients
 
         # compare current guess vs target (criterion is MSELoss)
         loss = self.criterion(predicted_q, targets)
-
-        # weight_sum = torch.tensor(0.0, device=config.device)
-        # for param in self.q_network.parameters():
-        #     weight_sum = weight_sum + param.sum()
-
-        # loss = base_loss + self.regularization_C * weight_sum
-        # print(f"Ap index: {ap_index}, Base Loss: {base_loss.item():.4f}, Regularization Term: {(regularization_C * weight_sum).item():.4f}, Total Loss: {loss.item():.4f}")
-        # loss = self.criterion(predicted_q, targets) + C * (Sum of values of weights)
-        #                                             + C * (Sum of absolute values)
-        #                                             + C * (sum of squared values) ~ 10e34
 
         # Clear old gradients
         self.q_network.zero_grad()

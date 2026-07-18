@@ -1,4 +1,6 @@
 
+"""Plots heatmaps of a selected layer's weights and biases for baseline models."""
+
 from pathlib import Path
 
 import numpy as np

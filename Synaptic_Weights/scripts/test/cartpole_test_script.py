@@ -1,3 +1,5 @@
+"""Runs large-sample checkpoint evaluation for one selected cartpole/weight pair."""
+
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))

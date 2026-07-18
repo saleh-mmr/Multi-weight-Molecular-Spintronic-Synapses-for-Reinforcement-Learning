@@ -1,3 +1,5 @@
+"""DQN agent with selectable sign-based or classical weight update controllers."""
+
 import os
 import numpy as np
 import sys
@@ -9,7 +11,7 @@ from utils import config
 from memory.replay_memory import ReplayMemory
 from network.network import DQNNetwork
 from controller.sgd_optimizer import GDOptimizer
-from controller.linear_function_conductance import ManhattanController
+from controller.linear_function_conductance import ManhattanController as LinearManhattanController
 from controller.logarithmic_function_conductance import LogarithmicManhattanController
 
 class DQNAgent:
@@ -50,7 +52,7 @@ class DQNAgent:
         self.criterion = nn.MSELoss()
 
         if optimizer_selector == 1:
-            self.weight_controller = LinearManhattanController(self.q_network, learning_rate=0.001)
+            self.weight_controller = LinearManhattanController(self.q_network, eta=0.0007)
         elif optimizer_selector == 2:
             self.weight_controller = LogarithmicManhattanController(self.q_network)
         elif optimizer_selector == 3:

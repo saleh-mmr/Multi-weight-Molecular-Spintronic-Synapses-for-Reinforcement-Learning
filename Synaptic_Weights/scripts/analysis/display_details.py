@@ -1,3 +1,5 @@
+"""Renders one run's details_log.csv into a presentation-ready parameter table image."""
+
 from pathlib import Path
 import pandas as pd
 import matplotlib.pyplot as plt
