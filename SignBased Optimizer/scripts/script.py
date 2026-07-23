@@ -41,7 +41,7 @@ controller = {
 
 problem = {
     1: "CartPole",
-    2: "MountainCar",
+    # 2: "MountainCar",
 }
 
 hyperparams = {
