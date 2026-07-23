@@ -115,7 +115,6 @@ python3 train_script.py
 
 ## Notes on reproducibility
 
-- All projects expose explicit seeding in their run scripts.
 - Model checkpoints are saved during training and then reused by test/analysis scripts.
 - `Synaptic_Weights` stores run artifacts under `scripts/*/three_problems/run_<timestamp>/`.
 
