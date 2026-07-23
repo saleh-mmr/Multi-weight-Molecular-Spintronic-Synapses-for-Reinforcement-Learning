@@ -8,32 +8,55 @@ import torch
 
 
 class SynapticWeightController:
+    """
+    High-performance vectorized replacement for SynapticWeightController (non-optimized).
+    
+    Key improvements:
+      1. Tensor-based state storage (all crosspoint indices/noise in one tensor per parameter)
+      2. Batch updates using PyTorch vectorized operations (no Python loops)
+      3. Weight caching (only recompute if dirty flag or ap_index changed)
+    
+    State storage (per parameter):
+      - bias_x, bias_noise: current index and noise of bias crosspoint
+      - positive_x[i], positive_noise[i]: index and noise of i-th AP-selectable crosspoint
+    
+    The three AP-selectable crosspoints (n_problem=3) support multi-environment training
+    where each environment switches the active AP state.
+    """
+
     def __init__(self, model, g_ap, g_p, shift_parameter, g_bias, noise_stddev):
+        """
+        Initialize vectorized controller with neural network and device parameters.
+        
+        Creates per-parameter tensors for storing crosspoint indices and noise values.
+        All tensors are allocated on the same device and dtype as model parameters.
+        
+        Args:
+            model: PyTorch neural network
+            g_ap (float): AP-state conductance coefficient
+            g_p (float): P-state conductance coefficient
+            shift_parameter (float): log10 offset
+            g_bias (float): bias conductance coefficient
+            noise_stddev (float): Gaussian noise std dev
+        """
         self.model = model
 
-        # Conductance parameters
+        # Store conductance parameters for weight computation
         self.g_ap = float(g_ap)
         self.g_p = float(g_p)
         self.shift_parameter = float(shift_parameter)
         self.g_bias = float(g_bias)
         self.noise_stddev = float(noise_stddev)
 
-        # Same as your old MultiWeightSynapseSpec
+        # Fixed: 3 AP-selectable crosspoints per parameter
         self.n_problem = 3
         self.scaling_factor = 1.0
 
-        # Tensor-based synapse states
-        # For each model parameter named `name`, we store:
-        # self.bias_x[name]:
-        #     bias crosspoint index, same shape as parameter
-        # self.bias_noise[name]:
-        #     bias crosspoint noise, same shape as parameter
-        # self.positive_x[name]:
-        #     positive crosspoint index, shape = (n_problem, *parameter.shape)
-        # self.positive_noise[name]:
-        #     positive crosspoint noise, shape = (n_problem, *parameter.shape)
-
-
+        # Per-parameter state tensors
+        # bias_x[name]: tensor with same shape as parameter, stores bias crosspoint indices
+        # bias_noise[name]: tensor with same shape, stores bias crosspoint noise
+        # positive_x[name]: tensor with shape (n_problem, *param.shape), stores AP-indices
+        # positive_noise[name]: tensor with shape (n_problem, *param.shape), stores AP-noise
         self.bias_x = {}
         self.bias_noise = {}
         self.positive_x = {}
@@ -47,8 +70,10 @@ class SynapticWeightController:
             dtype = param.dtype
             shape = param.shape
 
+            # Compute equilibrium index (same as CrosspointState logic)
             initial_x = self._initial_index(device=device, dtype=dtype)
 
+            # Allocate and initialize bias state tensors
             self.bias_x[name] = torch.full(
                 shape,
                 initial_x,
@@ -62,6 +87,7 @@ class SynapticWeightController:
                 dtype=dtype,
             )
 
+            # Allocate and initialize positive state tensors (one per AP-selectable branch)
             self.positive_x[name] = torch.full(
                 (self.n_problem, *shape),
                 initial_x,
@@ -75,25 +101,50 @@ class SynapticWeightController:
                 dtype=dtype,
             )
 
-        # Helps avoid unnecessary reloading later.
+        # Caching: skip recomputation if ap_index unchanged and weights not updated
         self.current_loaded_ap_index = None
         self.weights_dirty = True
 
     def _initial_index(self, device, dtype):
         """
-        This function is implemented because we add 'shift_parameter' to G_p, so we need to find
-        the initial index where G_ap>G_p. Returns the initial index as a float tensor value.
+        Compute equilibrium crosspoint index.
+        
+        Solves for i such that G_ap(i) ≈ G_p(i):
+            i^k ≈ i + shift_parameter
+        where k = g_ap / g_p.
+        
+        Returns initial_index as a scalar tensor on the specified device.
+        
+        Args:
+            device: torch device (CPU or GPU)
+            dtype: torch dtype (float32 or float64)
+        
+        Returns:
+            float: scalar equilibrium index
         """
         k = self.g_ap / self.g_p
         i = 1
+        # Binary search could be faster, but scalar loop is fine for initialization
         while i ** k <= i + self.shift_parameter:
             i += 1
         return float(i)
 
     def _draw_noise(self, shape, device, dtype):
         """
-        Same behavior as np.random.normal(0.0, noise_stddev), but vectorized.
-        If noise_stddev <= 0, return zero noise.
+        Draw a batch of Gaussian noise samples.
+        
+        If noise_stddev > 0: return N(0, noise_stddev) samples
+        If noise_stddev <= 0: return zeros (no stochasticity)
+        
+        Vectorized equivalent of BaseCrosspoint.redraw_noise() for all crosspoints.
+        
+        Args:
+            shape: tensor shape to fill
+            device: torch device
+            dtype: torch dtype
+        
+        Returns:
+            torch.Tensor: noise samples with given shape
         """
         if self.noise_stddev > 0:
             return torch.normal(
@@ -109,15 +160,19 @@ class SynapticWeightController:
     @torch.no_grad()
     def step(self, ap_index):
         """
-        Vectorized replacement for the old per-weight update.
-
-        Old behavior:
-
-        if grad > 0:
-            increase bias crosspoint index
-
-        if grad < 0:
-            increase positive crosspoint index for this ap_index
+        Update all crosspoint indices based on gradient signs (vectorized).
+        
+        For each parameter with gradient:
+          1. Identify elements with positive gradient → increment bias index
+          2. Identify elements with negative gradient → increment AP index at ap_index
+        
+        Non-finite (NaN/Inf) gradients are masked out.
+        
+        Single pass over model parameters with no loops over individual weights.
+        Sets weights_dirty=True to trigger recomputation on next load_weights().
+        
+        Args:
+            ap_index (int): which AP-selectable crosspoint (0-2) to update for negatives
         """
         assert 0 <= ap_index < self.n_problem
 
@@ -129,66 +184,25 @@ class SynapticWeightController:
             if grad is None:
                 continue
 
+            # Mask to identify elements that should be updated
             valid = torch.isfinite(grad)
+            # Positive gradient: increase bias (reduce weight)
             pos = (grad > 0) & valid
+            # Negative gradient: increase AP crosspoint (increase weight)
             neg = (grad < 0) & valid
 
-            # --------------------------------------------------
-            # Debug print for FC.2.weight[0][0]
-            # --------------------------------------------------
-            # if name == "FC.2.weight":
-            #     row = 0
-            #     col = 0
-            #
-            #     grad_00 = grad[row, col].item()
-            #
-            #     old_bias_x_00 = self.bias_x[name][row, col].item()
-            #     old_bias_noise_00 = self.bias_noise[name][row, col].item()
-            #
-            #     old_pos_x_values = []
-            #     old_pos_noise_values = []
-            #
-            #     for problem_index in range(self.n_problem):
-            #         old_pos_x_values.append(
-            #             self.positive_x[name][problem_index, row, col].item()
-            #         )
-            #         old_pos_noise_values.append(
-            #             self.positive_noise[name][problem_index, row, col].item()
-            #         )
-            #
-            #     if grad_00 > 0:
-            #         update_type = "positive gradient -> update bias crosspoint"
-            #     elif grad_00 < 0:
-            #         update_type = f"negative gradient -> update positive crosspoint for ap_index={ap_index}"
-            #     elif not torch.isfinite(grad[row, col]):
-            #         update_type = "invalid gradient -> no update"
-            #     else:
-            #         update_type = "zero gradient -> no update"
-            #
-            #     print(
-            #         "----------------------------------------\n"
-            #         f"step(ap_index={ap_index}) | FC.2.weight[0][0]\n"
-            #         f"gradient = {grad_00:.6f}\n"
-            #         f"update   = {update_type}\n"
-            #         f"before bias: x = {old_bias_x_00:.0f}, noise = {old_bias_noise_00:.6f}\n"
-            #         f"before positive problem 0: x = {old_pos_x_values[0]:.0f}, noise = {old_pos_noise_values[0]:.6f}\n"
-            #         f"before positive problem 1: x = {old_pos_x_values[1]:.0f}, noise = {old_pos_noise_values[1]:.6f}\n"
-            #         f"before positive problem 2: x = {old_pos_x_values[2]:.0f}, noise = {old_pos_noise_values[2]:.6f}\n"
-            #         "----------------------------------------"
-            #     )
-
-            # Positive gradient:
-            # object-level code called increase_bias_crosspoint_index()
+            # Vectorized update: increment indices where condition is true
+            # This is equivalent to a loop: for each True element, increment by 1.0
             if pos.any():
                 self.bias_x[name][pos] += 1.0
+                # Resample noise for updated elements
                 self.bias_noise[name][pos] = self._draw_noise(
                     self.bias_noise[name][pos].shape,
                     device=param.device,
                     dtype=param.dtype,
                 )
 
-            # Negative gradient:
-            # object-level code called increase_positive_crosspoint_index(ap_index)
+            # Increment AP crosspoint at ap_index for negative gradients
             if neg.any():
                 self.positive_x[name][ap_index][neg] += 1.0
                 self.positive_noise[name][ap_index][neg] = self._draw_noise(
@@ -199,25 +213,31 @@ class SynapticWeightController:
 
         self.weights_dirty = True
 
-
     @torch.no_grad()
     def load_weights(self, ap_index):
         """
-        Load physical synaptic weights into the PyTorch model.
-
-        Multiplicative noise model:
-
-            G_ap   = (g_ap   * log10(x_ap))                 * (1 + noise_ap)
-            G_p    = (g_p    * log10(x_p + shift_parameter)) * (1 + noise_p)
-            G_bias = (g_bias * log10(x_bias))               * (1 + noise_bias)
-
-        Weight:
-
-            weight = scaling_factor * (G_total - G_bias)
+        Compute and load all network parameters from physical device state.
+        
+        Vectorized weight computation:
+        
+        For each parameter:
+          1. Compute bias conductance:  G_bias = g_bias * log10(x_bias) * (1 + noise_bias)
+          2. For each AP-selectable crosspoint i:
+             - If i == ap_index: G_ap = g_ap * log10(x_ap) * (1 + noise_ap)
+             - Else: G_p = g_p * log10(x_p + shift) * (1 + noise_p)
+          3. Sum all positive conductances: G_total = Σ G_i
+          4. Final weight: w = scaling_factor * (G_total - G_bias)
+        
+        Caching optimization:
+          - If ap_index unchanged and weights_dirty=False, skip computation
+          - This avoids redundant weight recalculation within a learning episode
+        
+        Args:
+            ap_index (int): which AP-selectable crosspoint (0-2) is "on"
         """
-
         assert 0 <= ap_index < self.n_problem
 
+        # Skip recomputation if nothing changed
         if self.current_loaded_ap_index == ap_index and not self.weights_dirty:
             return
 
@@ -225,17 +245,12 @@ class SynapticWeightController:
             if not param.requires_grad:
                 continue
 
-            # --------------------------------------------------
-            # Bias conductance
-            # --------------------------------------------------
+            # Compute bias conductance for all elements in parallel
             x_bias = self.bias_x[name]
             noise_bias = self.bias_noise[name]
-
             g_bias = (self.g_bias * torch.log10(x_bias)) * (1.0 + noise_bias)
 
-            # --------------------------------------------------
-            # Positive crosspoint conductance total
-            # --------------------------------------------------
+            # Compute total positive conductance (sum across n_problem branches)
             g_total = torch.zeros_like(param)
 
             for problem_index in range(self.n_problem):
@@ -243,84 +258,19 @@ class SynapticWeightController:
                 noise_pos = self.positive_noise[name][problem_index]
 
                 if problem_index == ap_index:
-                    # Anti-parallel conductance for selected problem
+                    # AP-state branch (higher conductance for selected problem)
                     g = (self.g_ap * torch.log10(x_pos)) * (1.0 + noise_pos)
                 else:
-                    # Parallel conductance for non-selected problems
+                    # P-state branch (lower conductance for non-selected problems)
                     g = (self.g_p * torch.log10(x_pos + self.shift_parameter)) * (1.0 + noise_pos)
 
                 g_total += g
 
-            # --------------------------------------------------
-            # Final physical weight
-            # --------------------------------------------------
+            # Compute final synaptic weight
             weight = self.scaling_factor * (g_total - g_bias)
 
+            # Update model parameter in-place
             param.copy_(weight)
-
-            # --------------------------------------------------
-            # Debug print for FC.2.weight[0][0]
-            # --------------------------------------------------
-            # if name == "FC.2.weight":
-            #     row = 0
-            #     col = 0
-            #
-            #     # Bias debug values
-            #     x_bias_00 = self.bias_x[name][row, col]
-            #     noise_bias_00 = self.bias_noise[name][row, col]
-            #
-            #     g_bias_00 = (
-            #         self.g_bias * torch.log10(x_bias_00)
-            #     ) * (1.0 + noise_bias_00)
-            #
-            #     # Positive crosspoint debug values
-            #     g_values = []
-            #     x_values = []
-            #     noise_values = []
-            #     conductance_types = []
-            #
-            #     for problem_index in range(self.n_problem):
-            #         x_pos_00 = self.positive_x[name][problem_index, row, col]
-            #         noise_pos_00 = self.positive_noise[name][problem_index, row, col]
-            #
-            #         if problem_index == ap_index:
-            #             g_00 = (
-            #                 self.g_ap * torch.log10(x_pos_00)
-            #             ) * (1.0 + noise_pos_00)
-            #             conductance_type = "G_ap"
-            #         else:
-            #             g_00 = (
-            #                 self.g_p * torch.log10(x_pos_00 + self.shift_parameter)
-            #             ) * (1.0 + noise_pos_00)
-            #             conductance_type = "G_p"
-            #
-            #         g_values.append(g_00.item())
-            #         x_values.append(x_pos_00.item())
-            #         noise_values.append(noise_pos_00.item())
-            #         conductance_types.append(conductance_type)
-            #
-            #     g_total_00 = sum(g_values)
-            #     weight_00 = param[row, col].item()
-            #
-            #     print(
-            #         "----------------------------------------\n"
-            #         f"load_weights(ap_index={ap_index}) | FC.2.weight[0][0]\n"
-            #         f"Problem 0 | {conductance_types[0]} = {g_values[0]:.6f}, "
-            #         f"x0 = {x_values[0]:.0f}, noise0 = {noise_values[0]:.6f}\n"
-            #         f"Problem 1 | {conductance_types[1]} = {g_values[1]:.6f}, "
-            #         f"x1 = {x_values[1]:.0f}, noise1 = {noise_values[1]:.6f}\n"
-            #         f"Problem 2 | {conductance_types[2]} = {g_values[2]:.6f}, "
-            #         f"x2 = {x_values[2]:.0f}, noise2 = {noise_values[2]:.6f}\n"
-            #         f"G_bias   = {g_bias_00.item():.6f}, "
-            #         f"x_bias = {x_bias_00.item():.0f}, "
-            #         f"noise_bias = {noise_bias_00.item():.6f}\n"
-            #         f"G_total  = {g_total_00:.6f}\n"
-            #         f"weight   = scaling_factor * (G_total - G_bias)\n"
-            #         f"weight   = {self.scaling_factor} * "
-            #         f"({g_total_00:.6f} - {g_bias_00.item():.6f})\n"
-            #         f"weight   = {weight_00:.6f}\n"
-            #         "----------------------------------------"
-            #     )
 
         self.current_loaded_ap_index = ap_index
         self.weights_dirty = False
