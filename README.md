@@ -24,7 +24,7 @@ Most projects follow this module layout:
 
 ## 1) Baseline-RMSProp
 
-**Goal:** provide a clean DQN baseline for comparison.
+**Goal:** provide a clean DQN baseline.
 
 ### Main workflow
 
