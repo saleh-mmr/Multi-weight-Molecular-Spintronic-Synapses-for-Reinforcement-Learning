@@ -132,7 +132,7 @@ class SynapticWeightController:
         Compute and load all network parameters from physical device states.
         
         For each synapse object, computes the weight as:
-            weight = scaling_factor * (sum_of_conductances - bias_conductance)
+            weight = scaling_factor * (sum_of_conductance - bias_conductance)
         
         where which positive crosspoint is in AP state is determined by ap_index.
         This creates a parameterized family of weights indexed by ap_index (0-2),
